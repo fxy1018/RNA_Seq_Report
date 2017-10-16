@@ -33,8 +33,16 @@ tissue = data.frame(my_db2 %>% tbl('tissue'))
 #get ensembl
 ensembl = data.frame(my_db2 %>% tbl('ensembl'))
 
+#get homologue
+human_homolog = data.frame(my_db2 %>% tbl('human_homologue'))
+
+
 #get gene expression
-gene_expression =data.frame(my_db2 %>% tbl("gene_expression_log_rpkm"))
+gene_expression_rpkm =data.frame(my_db2 %>% tbl("gene_expression_log_rpkm"))
+
+#get TPM gene expression
+gene_expression_tpm = data.frame(my_db2 %>% tbl("gene_expression_tpm"))
+
 
 #get diff_gene_expression
 diff_gene_expression = data.frame(my_db2 %>% tbl("diff_gene_expression"))
@@ -56,6 +64,10 @@ kegg_pathway_analysis = data.frame(my_db2 %>% tbl('kegg_pathway_analysis'))
 #get kegg pathway
 kegg_pathways = data.frame(my_db2 %>% tbl('kegg_pathway'))
 
+#get kegg disease pathway 
+kegg_disease_pathways = data.frame(my_db2 %>% tbl("kegg_disease_pathway"))
+
+
 #get kegg pathview table
 pathview = data.frame(my_db2 %>% tbl('pathview'))
 pathview = merge(pathview, kegg_pathways, by.x='kegg_id', by.y='id', all.x=T)
@@ -69,5 +81,25 @@ reactome_pathway_analysis = data.frame(my_db2 %>% tbl('reactome_pathway_analysis
 #get reactome pathway
 reactome_pathways = data.frame(my_db2 %>% tbl('reactome_pathway'))
 
+#get transpoter table
+transporter = data.frame(my_db2 %>% tbl('transporter'))
+
+#get transcription factor
+transcription_factor = data.frame(my_db2 %>% tbl('transcription_factor'))
 
 poolClose(my_db2)
+
+my_db <- dbPool(
+  RMySQL::MySQL(),
+  dbname = "ncbi_gene_expression",
+  host = host,
+  username=username,
+  password = password
+)
+
+#get ncbi gene expression project
+ncbi_gene_exp_project = data.frame(my_db %>% tbl("project"))
+ncbi_expression_tissue = data.frame(my_db %>% tbl("expression_tissue"))
+ncbi_tissue = data.frame(my_db %>% tbl('tissue'))
+
+poolClose(my_db)

@@ -32,12 +32,11 @@ report_pathway_view <-function(conditionTable) {
                                               min = 0.00,
                                               max = 1.00,
                                               step = 0.01)
+                          ),
+
+                          column(3,
+                                 checkboxInput("disease_pathway", "Only Show Disease Pathways", value = FALSE, width = "400px")
                           )
-                          # ,
-                          # 
-                          # column(3,
-                          #        checkboxInput("screted", "Only Show Screted Proteins", value = FALSE, width = "400px")
-                          # )
                         
                         ),
                         fluidRow(
@@ -52,9 +51,12 @@ report_pathway_view <-function(conditionTable) {
                           )
                         ),
                         br(),
-                        fluidRow(
+                        fluidRow(style="height:800px;",
                           #htmlOutput("pathview")
-                          imageOutput("pathview")
+                          tags$div(
+                            imageOutput("pathview")
+                          )
+                          
                         ),
                         br(),
                         fluidRow(

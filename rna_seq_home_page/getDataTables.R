@@ -2,7 +2,7 @@
 
 library(pool)
 library(dplyr)
-
+source('helpFunctions.R')
 #################
 getConditionTable <- function(expId){
   
@@ -24,7 +24,13 @@ getSampleTable <- function(expId, condition_table){
 
 
 ################
-getExpressionGeneTable <- function(condition_table, select_gene_condition, select_gene_gene,exp_id, ensembl_gene_table){
+getExpressionGeneTable <- function(condition_table, select_gene_condition, select_gene_gene,exp_id, ensembl_gene_table, method){
+  if (method=="TPM"){
+    gene_expression = gene_expression_tpm
+  } 
+  else if (method == "RPKM"){
+    gene_expression = gene_expression_rpkm
+  }
   
   #get condition ids 
   selected_conditions = condition_table %>% filter(name %in% select_gene_condition)
@@ -32,7 +38,12 @@ getExpressionGeneTable <- function(condition_table, select_gene_condition, selec
   #get sub sample table
   sample_sub =  sample %>% filter(experiment_id == exp_id) %>% filter(condition_id %in% selected_conditions$id)
   
-  selected_genes = ensembl_gene_table %>% filter(gene_name %in% select_gene_gene)
+  if (length(select_gene_gene) == 0){
+    selected_genes = ensembl_gene_table
+  }
+  else{
+    selected_genes = ensembl_gene_table %>% filter(gene_name %in% select_gene_gene)
+  }
   
   gene_expression_table =  gene_expression %>%
     filter(sample_id %in% sample_sub$id) %>%
@@ -46,8 +57,28 @@ getExpressionGeneTable <- function(condition_table, select_gene_condition, selec
   
   colnames(gene_expression_table) = c('Gene', 'Expression','Condition', 'Sample')
   
+  gene_expression_table = gene_expression_table[order(gene_expression_table$Expression, decreasing = T),]
   return(gene_expression_table)
 }
+
+###############
+getNCBIGeneExpression <- function(ncbi_project_id, select_gene_gene){
+  select_gene_gene_id = gene_info %>% filter(symbol %in% select_gene_gene) %>% select('entrez', 'symbol')
+  
+  
+  ncbi_expression_tissue_table = ncbi_expression_tissue %>% 
+                                 filter(project_id == ncbi_project_id) %>% 
+                                 filter(gene %in% select_gene_gene_id$entrez) %>%
+                                 left_join(ncbi_tissue, by=c('tissue_id' = 'id')) %>%
+                                 left_join(select_gene_gene_id, by=c('gene' = 'entrez'))
+  
+  colnames(ncbi_expression_tissue_table) = c('id', 'description', 'entrez',
+                                             'tissue_id', 'full_rpkm', 'exp_rpkm',
+                                             'var', 'project_id', 'tissue', 'symbol')
+  return(ncbi_expression_tissue_table)
+}
+
+
 
 ################
 getDiffGeneTable <- function(expId, condition_table){
@@ -98,6 +129,76 @@ filterDiffGeneTable <- function(diff_gene_table, condition_table, condition1, co
   return(data)
 }
 
+###############
+filterDiffGeneTable2 <- function(diff_gene_table, condition_table, condition1, condition2, fdr, protein_type, species_id_input,uniprot_table){
+  data <- diff_gene_table
+  if (condition1 != "All" & condition2 != 'All'){
+    c1_id = condition_table$id[condition_table$name == condition1]
+    c2_id = condition_table$id[condition_table$name == condition2]
+    validated =  as.numeric(c1_id) > as.numeric(c2_id)
+    validate(
+      need(validated,"No results, choose opposite comparison")
+    )
+    
+    filter = diff_gene_table$condition1_id ==c1_id & diff_gene_table$condition2_id ==c2_id
+    data <- diff_gene_table[filter,]
+  }
+  
+  data <- data[data$fdr < fdr, c(-1,-2)]
+  
+  #format the data
+  data$fdr <- format(as.numeric(data$fdr), scientific = T, digits=4)
+  data$pvalue <- format(as.numeric(data$pvalue), scientific = T, digits=4)
+  data$logfc <- round(as.numeric(data$logfc), 3)
+  # data$logcpm <- round(as.numeric(data$logcpm), 3)
+  # data$lr <- round(as.numeric(data$lr), 3)
+  
+  #filter the data according to the protein_type
+  data = proteinFilter(data, protein_type,species_id_input, uniprot_table)
+
+  
+  return(data)
+}
+
+###############
+proteinFilter <- function(data, protein_type, species_id_input, uniprot_table){
+  if (protein_type == "All"){
+    data = data
+  }
+  else if (protein_type == "Screted Proteins"){
+    data$capital_name = toupper(data$gene_name)
+    data = merge(data, uniprot_table[,c(1,2,4)], by.x="capital_name", by.y="entry_name", all.x=TRUE)
+    data = data[!is.na(data$uniprot), c(-1,-11,-12)]
+    if (length(data$uniprot) != 0){
+      data$Uniprot <- createLink(data$uniprot, "Uniprot", species_id_input)
+    }
+  }
+  else if (protein_type == "Transporters"){
+    data$capital_name = toupper(data$gene_name)
+    data = merge(data, transporter[transporter$species_id==species_id_input,], by.x="capital_name", by.y="entry_name", all=F)
+    # if (length(data$uniprot) != 0){
+    #   data$Uniprot <- createLink(data$uniprot, "Uniprot", species_id_input)
+    # }
+    
+    data = data[,-which(names(data) %in% c("capital_name","id", 'uniprot', 
+                                           'other_gene_name', 'species_id', 'protein_name'))]
+    
+  }
+  else if (protein_type == "Transcription Factors"){
+    data$capital_name = toupper(data$gene_name)
+    data = merge(data, transcription_factor[,c('id', 'gene_symbol')], by.x="capital_name", by.y="gene_symbol", all= F)
+    data = data[, -which(names(data) %in% c('id', 'gene_symbol', 'capital_name'))]
+  }
+  
+  if (length(data$entrez) != 0) {
+    data$NCBI <- createLink(data$entrez, "NCBI", species_id_input)
+    data$OMIM <- createLink(data$entrez, "OMIM", species_id_input)
+  }
+  return(data)
+}
+
+
+
 ################
 getKEGGTable <- function(expId, condition_table){
   #load kegg results
@@ -118,8 +219,12 @@ getKEGGTable <- function(expId, condition_table){
 
 
 ##############
-filterKEGGTable <- function(kegg_table, condition_table, condition1, condition2, fdr){
+filterKEGGTable <- function(kegg_table, condition_table, condition1, condition2, fdr, disease_pathway){
   data <- kegg_table
+  if (disease_pathway==T) {
+    data = data %>% filter(kegg %in% kegg_disease_pathways$kegg)
+  }
+  
   if (condition1 != "All" & condition2 != 'All'){
     c1_id = condition_table$id[condition_table$name == condition1]
     c2_id = condition_table$id[condition_table$name == condition2]

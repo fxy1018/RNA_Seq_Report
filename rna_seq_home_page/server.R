@@ -45,6 +45,9 @@ shinyServer(function(input, output, session) {
     
     #get uniprot table
     uniprot_table <- uniprot %>% filter(species_id == species_id_input)
+    
+    #get update ncbi gene project table
+    ncbi_gene_project_table = ncbi_gene_exp_project %>% filter(species_id == species_id_input)
 
     #################end of getting data####################
     
@@ -70,6 +73,7 @@ shinyServer(function(input, output, session) {
     
     ############gene expression tab#############
     observeEvent(input$gene_condition,{
+      updateSelectInput(session, "gene_ncbi_project", choices = c("None", ncbi_gene_project_table$description))
       updateSelectizeInput(session, "gene_gene", choices = ensembl_gene_table$gene_name, server = TRUE)
     })
     
@@ -82,9 +86,11 @@ shinyServer(function(input, output, session) {
         select_gene_condition = condition_table$name
       }
       
-      gene_expression_table = getExpressionGeneTable(condition_table, select_gene_condition, select_gene_gene,exp_id, ensembl_gene_table)
+      gene_expression_table = getExpressionGeneTable(condition_table, select_gene_condition, 
+                                                     select_gene_gene,exp_id, ensembl_gene_table, 
+                                                     input$gene_method)
       
-      
+      #render gene expression table to tab
       output$gene_expression_table <- DT::renderDataTable(
         {
           data = gene_expression_table
@@ -92,30 +98,153 @@ shinyServer(function(input, output, session) {
         escape = FALSE, rownames = FALSE, selection='none'
       )
       
+      #render bar chart 
+      output$gene_expression_barchart <- renderPlotly({
+        if (length(select_gene_gene) == 0){
+          return(NULL)
+        }
+        plotdata = aggregate(gene_expression_table[, c("Expression")], 
+                             list(gene_expression_table$Gene, gene_expression_table$Condition), 
+                             mean)
+        
+        var = aggregate(gene_expression_table[, c("Expression")], 
+                        list(gene_expression_table$Gene, gene_expression_table$Condition), 
+                        sd)
+        plotdata$var = var$x
+        colnames(plotdata) <- c("Gene", "Condition", "Expression","SD")
+        
+        if (input$gene_method == "RPKM"){
+          barchart = plot_ly(data=plotdata, x=~Gene, y=~Expression, 
+                           type='bar', color = ~Condition, 
+                           error_y = ~list(value = SD, color="black")) %>%
+                  layout(yaxis = list(title="AVG", autorange='reversed'), xaxis = list(title= ""))
+        }
+        else if (input$gene_method == "TPM"){
+          barchart = plot_ly(data=plotdata, x=~Gene, y=~Expression, 
+                             type='bar', color = ~Condition, 
+                             error_y = ~list(value = SD, color="black")) %>%
+            layout(yaxis = list(title="AVG"), xaxis = list(title= ""))
+          
+        }
+        
+        barchart
+      })
+      
+      
+      #render ncbi_expression_barchart
+      output$ncbi_gene_expression_barchart <- renderPlotly({
+        if (length(select_gene_gene) == 0){
+          return(NULL)
+        }
+        
+        if (input$gene_ncbi_project == "None") {
+          return(NULL)
+        }
+        ncbi_project_id = ncbi_gene_exp_project$id[ncbi_gene_exp_project$description == input$gene_ncbi_project]
+        plotdata = getNCBIGeneExpression(ncbi_project_id, select_gene_gene)
+        
+        m <- list(
+          l = 50,
+          r = 50,
+          b = 100,
+          t = 100,
+          pad = 4
+        )
+        
+        barchart = plot_ly(data=plotdata, x=~tissue, y=~full_rpkm, 
+                           type='bar', color = ~symbol, 
+                           error_y = ~list(value = sqrt(var), color="black")) %>%
+          layout(title = "NCBI Gene Expression", yaxis = list(title="AVG"), xaxis = list(title= "", margin=m))
+        
+        barchart
+        
+      })
+      
+      
+      
+      output$gene_expression_boxplot<- renderPlotly({
+        if (length(select_gene_gene) == 0){
+          return(NULL)
+        }
+        x_layout <- list(title="")
+        boxplot = plot_ly(gene_expression_table, x=~Gene, y = ~Expression, type="box",
+                     color = ~Condition, boxpoints="all", pointpos=0) %>% layout(boxmode="group", xaxis=x_layout)
+        
+        
+      })
+      
+      
+      
     })
     
+    
+    #download gene expression table
+    output$downloadGeneExpressionTable <- downloadHandler(
+      filename = function(){
+        paste0("gene_expression_", Sys.Date(), '.csv')
+      },
+      content = function(file){
+        select_gene_condition = input$gene_condition
+        select_gene_gene = input$gene_gene
+        
+        if ("All" %in% select_gene_condition) {
+          select_gene_condition = condition_table$name
+        }
+        
+        data = getExpressionGeneTable(condition_table, select_gene_condition, 
+                                      select_gene_gene,exp_id, ensembl_gene_table, 
+                                      input$gene_method)
+        write.csv(data, file, quote = F, row.names = F)
+      }
+    )
     
     ############end of gene expression tab#############
     
     ########diff gene table########
-    output$diff_gene_table <- DT::renderDataTable(
-      {
-        
-        data = filterDiffGeneTable(diff_gene_table_all, condition_table,input$condition1, input$condition2, input$fdr)
-        if (input$screted == TRUE){
-          data = merge(data, uniprot_table, by.x="gene_name", by.y="entry_name", all.x=TRUE)
-          print(head(data))
-          data = data[!is.na(data$uniprot), c(-10,-11)]
-          data$Uniprot <- createLink(data$uniprot, "Uniprot", species_id_input)
+    observeEvent(input$gene_diff_update,{
+      condition1 = input$condition1
+      condition2 = input$condition2
+      protein_type = input$protein_type
+      fdr = input$fdr
+      data = filterDiffGeneTable2(diff_gene_table_all, condition_table,
+                                  condition1, condition2, fdr, 
+                                  protein_type,species_id_input, uniprot_table)
+      
+      
+      output$diff_gene_table <- DT::renderDataTable(
+        {
+          data
+        },
+        escape = FALSE, rownames = FALSE, selection='none'
+      )
+      
+      
+      #volcano plot of diff gene page
+      output$volcanoPlot <-renderPlotly({
+        if (length(data$entrez) == 0){
+          return(NULL)
+        }
+        data = data[, -which(names(data) %in% c('Uniprot', 'NCBI', 'OMIM'))]
+        data$comparison = paste(data$condition1, data$condition2, sep="_vs_")
+        data$logfdr = log(as.numeric(data$fdr))
+  
+        dot_plot <- function(dat){
+          plot_ly(dat, x=~logfc, y=~logfdr, text=~paste("Gene:", gene_name), name = dat$comparison[1]) %>%
+            layout(yaxis=list(autorange="reversed"),xaxis=list(title="logFC"), yaxis=list(title="logFDR"))
+          # %>%
+          # add_trace(x=~s_point$logFC, y=~s_point$logFDR, type="scatter", col="red")
         }
         
-        data$NCBI <- createLink(data$entrez, "NCBI", species_id_input)
-        data$OMIM <- createLink(data$entrez, "OMIM", species_id_input)
-        
-        data
-      },
-      escape = FALSE, rownames = FALSE, selection='none'
-    )
+        data %>%
+          group_by(comparison) %>%
+          do(map=dot_plot(.)) %>%
+          subplot(nrows=2, margin=0.05, titleX=T, titleY=T) %>%
+          layout(title = paste0("volcano plot of ", input$experiment))
+      })
+  
+    })
+    
+    
     
     #download diff gene table
     output$downloadDiffGeneTable <- downloadHandler(
@@ -123,52 +252,26 @@ shinyServer(function(input, output, session) {
         paste0("genetable_", Sys.Date(), '.csv')
       },
       content = function(file){
-        data = filterDiffGeneTable(diff_gene_table_all, condition_table,input$condition1, input$condition2, input$fdr)
-        if (input$screted == TRUE){
-          data = merge(data, uniprot_table, by.x="gene_name", by.y="entry_name", all.x=TRUE)
-          data = data[!is.na(data$uniprot), ]
-        }
+        data = filterDiffGeneTable2(diff_gene_table_all, condition_table,
+                                    input$condition1, input$condition2, input$fdr, 
+                                    input$protein_type,species_id_input, uniprot_table)
+        
+        data = data[, -which(names(data) %in% c('Uniprot', 'NCBI', 'OMIM'))]
         write.csv(data, file, quote = F, row.names = F)
       }
     )
     
-    #volcano plot of diff gene page
-    output$volcanoPlot <-renderPlotly({
-      s = input$geneTable_rows_selected
-      data = filterDiffGeneTable(diff_gene_table_all, condition_table,input$condition1, input$condition2, input$fdr)
-      data$comparison = paste(data$condition1, data$condition2, sep="_vs_")
-      if (input$screted == TRUE){
-        data = merge(data, uniprot_table, by.x="gene_name", by.y="entry_name", all.x=TRUE)
-        data = data[!is.na(data$uniprot), ]
-      }
-      
-      data$logfdr = log(as.numeric(data$fdr))
-      
-      s_point <- data[s,]
-      
-      dot_plot <- function(dat){
-        plot_ly(dat, x=~logfc, y=~logfdr, text=~paste("Gene:", gene_name), name = dat$comparison[1]) %>%
-          layout(yaxis=list(autorange="reversed"),xaxis=list(title="logFC"), yaxis=list(title="logFDR"))
-        # %>%
-        # add_trace(x=~s_point$logFC, y=~s_point$logFDR, type="scatter", col="red")
-      }
-      
-      data %>%
-        group_by(comparison) %>%
-        do(map=dot_plot(.)) %>%
-        subplot(nrows=2, margin=0.05, titleX=T, titleY=T) %>%
-        layout(title = paste0("volcano plot of ", input$experiment))
-    })
+    
     
     ######################end of gene page########################
     ######################pathway page############################
     #####KEGG Tab######
     #get kegg table
     kegg_table_all <- getKEGGTable(exp_id, condition_table)
-    
+  
     output$kegg_table <- DT::renderDataTable(
       DT::datatable({
-        data = filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr)
+        data = filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr, input$disease_pathway)
         data
       }, escape=FALSE, selection='single'))
     
@@ -178,7 +281,7 @@ shinyServer(function(input, output, session) {
         paste("kegg-pathway-table-", Sys.Date(), '.csv', sep='')
       },
       content = function(file){
-        data <- filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr)
+        data <- filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr, input$disease_pathway)
         
         write.csv(data,file, quote = F, row.names = F)
       }
@@ -189,7 +292,7 @@ shinyServer(function(input, output, session) {
       validate(
         need(row[1]!=0,"Select a pathway to view the pathway")
       )
-      data <- filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr)
+      data <- filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr, input$disease_pathway)
       path = data[row,]
       kegg = path$kegg
       condition1 = path$condition1
@@ -207,7 +310,7 @@ shinyServer(function(input, output, session) {
       h<-dim(img)[1]
       w<-dim(img)[2]
 
-      png(outfile, width=w, height=h)
+      png(outfile, width=1200, height=800)
       par(mar=c(0,0,0,0), xpd=NA, mgp=c(0,0,0), oma=c(0,0,0,0), ann=F)
       plot.new()
       plot.window(0:1, 0:1)
@@ -221,8 +324,8 @@ shinyServer(function(input, output, session) {
 
       list(src = outfile,
            contentType = 'image/png',
-           width = 600,
-           height = 400,
+           width = 1050,
+           height = 800,
            alt = "This is alternate text")
 
     }, deleteFile = T)
@@ -230,11 +333,13 @@ shinyServer(function(input, output, session) {
     
     output$mappedGene2KEGGTable <- renderDataTable({
       row = input$kegg_table_rows_selected
+  
       validate(
         need(row[1]!=0,"")
       )
       
-      data <- filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr)
+      data <- filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr, input$disease_pathway)
+
       
       path = data[row,]
     
@@ -243,15 +348,10 @@ shinyServer(function(input, output, session) {
       condition2 = path$condition2
   
       genedata <- gene2KEGGTable[gene2KEGGTable$kegg == p_id, ]
-      diff_genes <- filterDiffGeneTable(diff_gene_table_all, condition_table,condition1, condition2, 0.05)
-      if (input$screted == TRUE){
-        diff_genes = merge(diff_genes, uniprot_table, by.x="gene_name", by.y="entry_name", all.x=TRUE)
-        diff_genes = diff_genes[!is.na(diff_genes$uniprot), ]
-        diff_genes$Uniprot <- createLink(diff_genes$uniprot, "Uniprot", species_id_input)
-      }
       
-      diff_genes$NCBI <- createLink(diff_genes$entrez, "NCBI", species_id_input)
-      diff_genes$OMIM <- createLink(diff_genes$entrez, "OMIM", species_id_input)
+      diff_genes = filterDiffGeneTable2(diff_gene_table_all, condition_table,
+                                  condition1, condition2, 0.1, 
+                                  "All",species_id_input, uniprot_table)
    
       genedata <- merge(diff_genes, genedata, by.x = "entrez", by.y = "entrez" , all = FALSE)
       genedata <- genedata[, c(1:8, 13, 9,10)]
@@ -313,15 +413,12 @@ shinyServer(function(input, output, session) {
       condition1 = path$condition1
       condition2 = path$condition2
       
-      diff_genes <- filterDiffGeneTable(diff_gene_table_all, condition_table,condition1, condition2, 0.05)
-      if (input$screted == TRUE){
-        diff_genes = merge(diff_genes, uniprot_table, by.x="gene_name", by.y="entry_name", all.x=TRUE)
-        diff_genes = diff_genes[!is.na(diff_genes$uniprot), ]
-        diff_genes$Uniprot <- createLink(diff_genes$uniprot, "Uniprot", species_id_input)
-      }
+      diff_genes = filterDiffGeneTable2(diff_gene_table_all, condition_table,
+                                        condition1, condition2, 0.1, 
+                                        "All",species_id_input, uniprot_table)
       
-      diff_genes$NCBI <- createLink(diff_genes$entrez, "NCBI", species_id_input)
-      diff_genes$OMIM <- createLink(diff_genes$entrez, "OMIM", species_id_input)
+      
+      
       
     
       genedata <- merge(diff_genes, genedata, by.x = "gene_name", by.y = "gene" , all = FALSE)

@@ -43,22 +43,32 @@ getSRC <- function(kegg_name, condition1, condition2, exp_id, pathview, conditio
 
 createLink <- function(val, db,species_id_input) {
   if (db=="NCBI"){
-    sprintf('<a href="https://www.ncbi.nlm.nih.gov/gene/?term=%s" class="btn btn-success">NCBI</a>',val)
+    sprintf('<a href="https://www.ncbi.nlm.nih.gov/gene/?term=%s" class="btn btn-success" target="_blank">NCBI</a>',val)
   }
   else if(db=="OMIM"){
     val2 = mim2gene(val,species_id_input)
-    sprintf('<a href="https://omim.org/entry/%s" class="btn btn-warning">OMIM</a>',val2)
+    
+    sprintf('<a href="https://omim.org/entry/%s" class="btn btn-warning" target="_blank">OMIM</a>',val2)
+      
   }
   else if(db=="Uniprot"){
-    sprintf('<a href="http://www.uniprot.org/uniprot/%s" class="btn btn-danger">Uniprot</a>', val)
+    sprintf('<a href="http://www.uniprot.org/uniprot/%s" class="btn btn-danger" target="_blank">Uniprot</a>', val)
   }
 }
 
 
 mim2gene <- function(val,species_id_input){
+
   mim_temp <- mim %>% filter(species_id == species_id_input)
-  out <- merge(mim_temp, as.data.frame(val), by.x="entrez", by.y="val", all.y = T)
-  out[order(as.numeric(out$entrez)),]
+  #detemine whether species is rat
+  if (species_id_input == 3){
+    val_ensembl = left_join(as.data.frame(val), gene_info, by = c("val"="entrez")) %>%
+      select(c('ensembl', 'val'))
+    out <- left_join(val_ensembl, human_homolog[!duplicated(human_homolog$rat_ensembl),], by=c('ensembl' = 'rat_ensembl' )) %>%
+      select(c('val', 'mim'))
+  }
+  else{
+    out <- left_join(as.data.frame(val), mim_temp, by = c("val"="entrez"))
+  }
   return(out$mim)
 }
-

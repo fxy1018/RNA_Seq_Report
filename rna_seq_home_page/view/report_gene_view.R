@@ -6,36 +6,63 @@ report_gene_view <-function(conditionTable) {
        tabPanel("Gene expression",
                 tags$h3("Choose conditions:"),
                 fluidRow(
-                  column(6, 
+                  column(3, 
                          selectizeInput("gene_condition",
                                      "Conditions:",
                                      choices = c("All", conditionTable$name), 
                                      multiple = TRUE, 
                                      options = list(create = FALSE))),
                  
-                  column(6, 
+                  column(3, 
                          selectizeInput("gene_gene",
                                    "Genes: ",
                                    choices = NULL,
                                    multiple = TRUE,
                                    options = list(placeholder = "select a gene", maxOptions = 10)
-                                   ))
+                                   )),
+                  column(3,
+                         selectInput("gene_method",
+                                     "Method: ",
+                                     choices = c("RPKM (log2)", "TPM"),
+                                     selected = "TPM",
+                                     multiple = FALSE)),
+                  column(3, 
+                         selectInput("gene_ncbi_project",
+                                     "Compare to NCBI Bioproject: ",
+                                     choices = NULL,
+                                     multiple= FALSE))
                 ),
                 
                 fluidRow(
+                  column(4,
+                        offset = 6,
+                        downloadButton("downloadGeneExpressionTable", 
+                                      label="Download Gene Expression Table")),
                   column(2,
-                         offset = 10,
+                         offset = 0,
                          actionButton("gene_update", label="Update"))
+                  
+                  
                 ),
                 
                 tags$hr(),
                 
-                fluidRow(
-                  DT::dataTableOutput("gene_expression_table")
+                conditionalPanel(
+                  condition = "input.gene_update > 0",
+                  fluidRow(
+                    tabsetPanel(type = "tabs",
+                                tabPanel("Gene Expression Table", DT::dataTableOutput("gene_expression_table")),
+                                tabPanel("Bar Chart",
+                                         plotlyOutput("gene_expression_barchart"),
+                                         tags$br(),
+                                         plotlyOutput("ncbi_gene_expression_barchart")),
+                                tabPanel("Box Plot", 
+                                         plotlyOutput("gene_expression_boxplot"),
+                                         tags$br(),
+                                         plotlyOutput("ncbi_gene_expression_boxplot", height='200%'))
+                    )
+                  )
                 )
-                
-                
-                
        ),
 
        tabPanel("Pairwise Comparison",
@@ -71,35 +98,42 @@ report_gene_view <-function(conditionTable) {
                                       step = 0.01)
                   ),
                   column(3,
-                         checkboxInput("screted", "Only Show Screted Proteins", value = FALSE, width = "400px")
+                         selectInput("protein_type",
+                                     "Protein Category:",
+                                     c("All",
+                                       "Screted Proteins",
+                                       "Transporters",
+                                       "Transcription Factors"),
+                                     selected = "All")
                   )
 
                 ),
-                
                 fluidRow(
-                     downloadButton("downloadDiffGeneTable", label="Download Gene Table")
+                  column(4,
+                         offset = 6,
+                         downloadButton("downloadDiffGeneTable", label="Download Gene Table")),
+                  column(2,
+                         offset = 0,
+                         actionButton("gene_diff_update", label="Update"))
                 ),
-                
+         
                 tags$hr(),
                 
-                fluidRow(
-                  DT::dataTableOutput("diff_gene_table")
-                ),
-
-                br(),
-
-                fluidRow(
-                  tags$h1("Volcano Plot"),
-                  plotlyOutput("volcanoPlot")
+                conditionalPanel(
+                  condition = "input.gene_diff_update > 0",
+                  fluidRow(
+                    DT::dataTableOutput("diff_gene_table")
+                  ),
+                  
+                  br(),
+                  
+                  fluidRow(
+                    tags$h1("Volcano Plot"),
+                    plotlyOutput("volcanoPlot")
+                  )
                 )
-
-
-                )
-
-
+        )
     )
-
-
   )}
 
 
