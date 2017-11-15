@@ -1,0 +1,95 @@
+<div class="row">
+	
+<div class='col-4'>
+<!--
+	<div>
+		<label for="gene">Please select a gene</label>
+		<select class="form-control" id="experiment" [(ngModel)]="selectedGene">
+			<option *ngFor="let gene of genes" [ngValue]="gene">{{gene.name}}
+			</option>
+		</select>
+	</div>
+-->
+	
+	<div>
+		<div class="form-group" >
+		<label for="gene">Please select a gene</label>
+		<angular2-multiselect id='gene' [data]="genes" [(ngModel)]="selectedGene"
+			[settings]="dropdownGeneSettings"
+			(onSelect)="onGeneSelect($event)"
+			(onDeSelect)="OnGeneDeSelect($event)"
+			(onSelectAll)="onGeneSelectAll($event)"
+			(onDeSelectAll)="onGeneDeSelectAll($event)"></angular2-multiselect>
+		</div>
+	</div>
+	
+	<div>
+		<div class="form-group" >
+		<label for="experiment">Please select experiments</label>
+		<angular2-multiselect id="experiment" [data]="experiments" [(ngModel)]="selectedExperiments"
+			[settings]="dropdownExperimentsSettings"
+			(onSelect)="onExperimentsSelect($event)"
+			(onDeSelect)="OnExperimentsDeSelect($event)"
+			(onSelectAll)="onExperimentsSelectAll($event)"
+			(onDeSelectAll)="onExperimentsDeSelectAll($event)"></angular2-multiselect>
+		</div>
+	</div>
+	
+	
+	<div (click)=getConditions(selectedExperiments)>
+		<div class="form-group" >
+		<label for="condition">Please select conditions</label>
+		<angular2-multiselect id="condition" [data]="conditions" [(ngModel)]="selectedConditions"
+			[settings]="dropdownConditionsSettings"
+			(onSelect)="onConditionsSelect($event)"
+			(onDeSelect)="OnConditionsDeSelect($event)"
+			(onSelectAll)="onConditionsSelectAll($event)"
+			(onDeSelectAll)="onConditionsDeSelectAll($event)"></angular2-multiselect>
+		</div>
+	</div>
+
+	<button type="button" class="btn btn-default" (click)=downloadExpressions()> <i class="fa fa-floppy-o" aria-hidden="true"></i> Download</button>
+	
+	<button type="button" class="btn btn-default" (click)=getExpressions()><i class="fa fa-play" aria-hidden="true"></i> Update</button>
+	
+	
+	
+
+<!--
+	<div (click)=getConditions(selectedExperiment.id) >
+		<div class="form-group" >
+		<label for="condition">Please select conditions</label>
+		<angular2-multiselect id="condition" [data]="conditions" [(ngModel)]="selectedConditions"
+			[settings]="dropdownConditoinsSettings"
+			(onSelect)="onConditionsSelect($event)"
+			(onDeSelect)="OnConditionsDeSelect($event)"
+			(onSelectAll)="onConditionsSelectAll($event)"
+			(onDeSelectAll)="onConditionsDeSelectAll($event)"></angular2-multiselect>
+		</div>
+	</div>
+	
+	<div (click)=getGenes(selectedConditions)>
+		<div class="form-group" >
+		<label for="genes">Please select genes</label>
+		<angular2-multiselect [data]="genes" [(ngModel)]="selectedGenes"
+			[settings]="dropdownGenesSettings"
+			(onSelect)="onGenesSelect($event)"
+			(onDeSelect)="OnGenesDeSelect($event)"
+			(onSelectAll)="onGenesSelectAll($event)"
+			(onDeSelectAll)="onGenesDeSelectAll($event)"></angular2-multiselect>
+  		</div>
+	</div>
+	<button type="button" class="btn btn-primary" (click)=getExpressions() >Update</button>
+	<button type="button" class="btn btn-primary" (click)=downloadExpressions()>Download</button>
+-->
+	
+</div>
+
+<div class="col-8">
+	<div *ngIf="expressions">
+		<expression-detail [expressions]="expressions"></expression-detail>
+	</div>
+	
+</div>
+
+</div>

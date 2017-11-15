@@ -1,0 +1,15 @@
+<nav mat-tab-nav-bar>
+	<a mat-tab-link
+		 *ngFor="let routeLink of routeLinks;"
+		 [routerLink]='routeLink.link'
+		 routerLinkActive #rla="routerLinkActive"
+		 [active] = "activeLinkIndex===routeLink.index"
+		 (click)='activeLinkIndex=routeLink.index'
+		 [routerLinkActiveOptions]="{exact:true}">
+	
+		{{routeLink.label}}
+	</a>
+</nav>
+<router-outlet></router-outlet>
+
+<h1>hello from expression-detail</h1>
