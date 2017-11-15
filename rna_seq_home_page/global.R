@@ -2,9 +2,13 @@ library(pool)
 library(dplyr)
 
 #################connect to database#################
-host = Sys.getenv(c("MYSQL_CHEMSEV"))
-username = Sys.getenv(c("MYSQL_CHEMSEV_USER"))
-password = Sys.getenv(c("MYSQL_CHEMSEV_PASSWORD"))
+# host = Sys.getenv(c("MYSQL"))
+# username = Sys.getenv(c("MYSQL_USER"))
+# password = Sys.getenv(c("MYSQL_PASSWORD"))
+
+host = "127.0.0.1"
+username = "ironwood"
+password = "irtest"
 
 my_db2 <- dbPool(
   RMySQL::MySQL(),
@@ -36,7 +40,6 @@ ensembl = data.frame(my_db2 %>% tbl('ensembl'))
 #get homologue
 human_homolog = data.frame(my_db2 %>% tbl('human_homologue'))
 
-
 #get gene expression
 gene_expression_rpkm =data.frame(my_db2 %>% tbl("gene_expression_log_rpkm"))
 
@@ -67,7 +70,6 @@ kegg_pathways = data.frame(my_db2 %>% tbl('kegg_pathway'))
 #get kegg disease pathway 
 kegg_disease_pathways = data.frame(my_db2 %>% tbl("kegg_disease_pathway"))
 
-
 #get kegg pathview table
 pathview = data.frame(my_db2 %>% tbl('pathview'))
 pathview = merge(pathview, kegg_pathways, by.x='kegg_id', by.y='id', all.x=T)
@@ -86,6 +88,10 @@ transporter = data.frame(my_db2 %>% tbl('transporter'))
 
 #get transcription factor
 transcription_factor = data.frame(my_db2 %>% tbl('transcription_factor'))
+
+#get sGC table
+sGC = data.frame(my_db2 %>% tbl("sgc_pathway_gene"))
+
 
 poolClose(my_db2)
 

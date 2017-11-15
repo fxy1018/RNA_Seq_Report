@@ -330,6 +330,23 @@ shinyServer(function(input, output, session) {
 
     }, deleteFile = T)
     
+    output$keggPathviewLink <- renderUI({
+      row = input$kegg_table_rows_selected
+      data <- filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr, input$disease_pathway)
+      path = data[row,]
+      kegg = path$kegg
+      link <- getKEGGLink(kegg)
+      # http://www.genome.jp/dbget-bin/www_bget?pathway:hsa00140
+      # 
+      # link <- "http://www.genome.jp/kegg/pathway.html"
+      
+      tags$a(
+        imageOutput("pathview"),
+        href=link,
+        target="_blank"
+      )
+    })
+    
     
     output$mappedGene2KEGGTable <- renderDataTable({
       row = input$kegg_table_rows_selected
@@ -368,7 +385,7 @@ shinyServer(function(input, output, session) {
     output$reactome_table <- DT::renderDataTable(
       DT::datatable({
         data = filterReactomeTable(reactome_table_all, condition_table, input$reactomecondition1, input$reactomecondition2, input$reactomeFDR)
-        data = data[, -dim(data)[2]]
+        data = data[, c(-5,-dim(data)[2], -8)]
       }, escape=FALSE, selection='single'))
     
     

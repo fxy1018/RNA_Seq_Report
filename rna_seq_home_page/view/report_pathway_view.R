@@ -36,6 +36,7 @@ report_pathway_view <-function(conditionTable) {
 
                           column(3,
                                  checkboxInput("disease_pathway", "Only Show Disease Pathways", value = FALSE, width = "400px")
+                                 
                           )
                         
                         ),
@@ -54,7 +55,12 @@ report_pathway_view <-function(conditionTable) {
                         fluidRow(style="height:800px;",
                           #htmlOutput("pathview")
                           tags$div(
-                            imageOutput("pathview")
+                            # tags$a(
+                            #   imageOutput("pathview"),
+                            #   href="http://www.genome.jp/kegg/pathway.html"
+                            # )
+                            uiOutput("keggPathviewLink")
+                            
                           )
                           
                         ),

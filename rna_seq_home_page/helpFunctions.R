@@ -72,3 +72,13 @@ mim2gene <- function(val,species_id_input){
   }
   return(out$mim)
 }
+
+
+getKEGGLink<-function(kegg){
+  kegg = sub("path", "pathway", kegg, fixed=T)
+  link <- paste0("http://www.genome.jp/dbget-bin/www_bget?", kegg)
+  return(link)
+  
+  
+  
+}

@@ -18,12 +18,12 @@ report_gene_view <-function(conditionTable) {
                                    "Genes: ",
                                    choices = NULL,
                                    multiple = TRUE,
-                                   options = list(placeholder = "select a gene", maxOptions = 10)
+                                   options = list(placeholder = "select a gene", maxOptions = 30)
                                    )),
                   column(3,
                          selectInput("gene_method",
                                      "Method: ",
-                                     choices = c("RPKM (log2)", "TPM"),
+                                     choices = c("TPM"),
                                      selected = "TPM",
                                      multiple = FALSE)),
                   column(3, 
@@ -101,9 +101,10 @@ report_gene_view <-function(conditionTable) {
                          selectInput("protein_type",
                                      "Protein Category:",
                                      c("All",
-                                       "Screted Proteins",
+                                       "Secreted Proteins",
                                        "Transporters",
-                                       "Transcription Factors"),
+                                       "Transcription Factors",
+                                       "sGC pathway"),
                                      selected = "All")
                   )
 

@@ -165,7 +165,7 @@ proteinFilter <- function(data, protein_type, species_id_input, uniprot_table){
   if (protein_type == "All"){
     data = data
   }
-  else if (protein_type == "Screted Proteins"){
+  else if (protein_type == "Secreted Proteins"){
     data$capital_name = toupper(data$gene_name)
     data = merge(data, uniprot_table[,c(1,2,4)], by.x="capital_name", by.y="entry_name", all.x=TRUE)
     data = data[!is.na(data$uniprot), c(-1,-11,-12)]
@@ -188,6 +188,11 @@ proteinFilter <- function(data, protein_type, species_id_input, uniprot_table){
     data$capital_name = toupper(data$gene_name)
     data = merge(data, transcription_factor[,c('id', 'gene_symbol')], by.x="capital_name", by.y="gene_symbol", all= F)
     data = data[, -which(names(data) %in% c('id', 'gene_symbol', 'capital_name'))]
+  }
+  else if (protein_type == "sGC pathway"){
+    data = merge(data, sGC[sGC$species_id==species_id_input,], by.x="gene_name", by.y="gene", all=F)
+    data = data[, -which(names(data) %in% c('id', 'alias', 'species_id'))]
+    data
   }
   
   if (length(data$entrez) != 0) {
