@@ -10,20 +10,22 @@
 		</select>
 	</div>
 -->
-	
-	<div>
+	<div *ngIf="genes">
 		<div class="form-group" >
 		<label for="gene">Please select a gene</label>
-		<angular2-multiselect id='gene' [data]="genes" [(ngModel)]="selectedGene"
-			[settings]="dropdownGeneSettings"
-			(onSelect)="onGeneSelect($event)"
-			(onDeSelect)="OnGeneDeSelect($event)"
-			(onSelectAll)="onGeneSelectAll($event)"
-			(onDeSelectAll)="onGeneDeSelectAll($event)"></angular2-multiselect>
+
+			
+			
+		<input auto-complete [(ngModel)]="selectedGene"
+					 [source]="genes" 
+					 [list-formatter]="autocompleListFormatter"
+					 value-property-name="id"
+					 display-property-name="gene_name"
+					 max-num-list=10>
 		</div>
 	</div>
-	
-	<div>
+		
+	<div *ngIf="experiments">
 		<div class="form-group" >
 		<label for="experiment">Please select experiments</label>
 		<angular2-multiselect id="experiment" [data]="experiments" [(ngModel)]="selectedExperiments"
@@ -36,10 +38,10 @@
 	</div>
 	
 	
-	<div (click)=getConditions(selectedExperiments)>
+	<div *ngIf="selectedExperiments">
 		<div class="form-group" >
 		<label for="condition">Please select conditions</label>
-		<angular2-multiselect id="condition" [data]="conditions" [(ngModel)]="selectedConditions"
+		<angular2-multiselect (click)=getConditions(selectedExperiments) id="condition" [data]="conditions" [(ngModel)]="selectedConditions"
 			[settings]="dropdownConditionsSettings"
 			(onSelect)="onConditionsSelect($event)"
 			(onDeSelect)="OnConditionsDeSelect($event)"

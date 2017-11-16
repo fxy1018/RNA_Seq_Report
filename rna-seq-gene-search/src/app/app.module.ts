@@ -6,14 +6,18 @@ import { FormsModule } from '@angular/forms';
 import { CsvService } from "angular2-json2csv";
 import { GeneService } from "./gene-search/gene.service";
 import { ExperimentService } from "./gene-search/experiment.service";
+import { ConditionService } from "./gene-search/condition.service";
 
-import { HttpClientModule }    from '@angular/common/http';
+import { HttpClientModule } from '@angular/common/http';
 
 import { AngularMultiSelectModule } from 'angular2-multiselect-dropdown/angular2-multiselect-dropdown';
 import {MatButtonModule, 
 				MatCheckboxModule,
 			 	MatTabsModule,
 			} from '@angular/material';
+ import { Ng2AutoCompleteModule } from 'ng2-auto-complete';
+
+
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterModule } from '@angular/router';
@@ -51,10 +55,11 @@ import { AppRoutingModule } from "./app-routing.module";
 		MatCheckboxModule,
 		MatTabsModule,
 		AppRoutingModule,
-		HttpClientModule
+		HttpClientModule,
+		Ng2AutoCompleteModule
 		
   ],
-  providers: [ CsvService, GeneService, ExperimentService, ],
+  providers: [ CsvService, GeneService, ExperimentService, ConditionService ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

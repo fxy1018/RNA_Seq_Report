@@ -9,6 +9,7 @@ import { EXPRESSIONS } from './mock-expressions';
 import { CsvService } from 'angular2-json2csv';
 import { GeneService } from './gene.service';
 import { ExperimentService } from './experiment.service';
+import { ConditionService } from './condition.service';
 
 @Component({
   selector: 'gene-search',
@@ -22,7 +23,7 @@ export class GeneSearchComponent implements OnInit {
 	conditions: Condition[];
 	expressions: Expression[];
 	
-	
+
 	selectedGene: Gene;
 	selectedExperiments: Experiment[];
 	selectedConditions: Condition[];
@@ -35,13 +36,13 @@ export class GeneSearchComponent implements OnInit {
 	constructor(private csvService: CsvService,
 							private geneService: GeneService,
 							private experimentService: ExperimentService,
+							private conditionService: ConditionService,
 							 
 							){}
 	
 	ngOnInit(){
 		this.getGenes();
 		this.getExperiments(); 
-		this.conditions = this.getConditions(this.selectedExperiments)
 		
 		this.selectedGene = null;
 		this.dropdownGeneSettings = { 
@@ -52,6 +53,7 @@ export class GeneSearchComponent implements OnInit {
                                   enableSearchFilter: true,
                                   classes:"myclass custom-class",
 																	maxHeight: 300,
+																	disabled: true,
 																	
 																	
                                 };
@@ -126,39 +128,61 @@ export class GeneSearchComponent implements OnInit {
 			console.log(items);
 	}
 	
+	
+
+
+	
 	getGenes(): void{
 		console.log('hello from get genes')
-		this.geneService.getGenes()
-				.subscribe(genes => this.genes = genes);
+		this.geneService.getGenes2()
+				.subscribe(genes => this.genes = genes['genes']);
 //		this.genes = this.geneService.getGenes();
 	}
 	
+	 autocompleListFormatter = (data: any) => {
+    let test = `<span> ${data.gene_name}</span>`;
+    return test;
+  }
+	
+	
+	
 	getExperiments(): void{
 		this.experimentService.getExperiments2()
-				.subscribe(experiments => {this.experiments = this.convertExp(experiments)});
+				.subscribe(experiments => {this.experiments = experiments['experiments']});
 	}
 	
-	convertExp(experiments): Experiment[]{
+//	convertExp(experiments): Experiment[]{
+//		var exp;
+//		var i = 0;
+//		experiments = experiments['experiments']
+//		var len = experiments.length;
+//		var out = [];
+//		for (i; i<len; i++){
+//			exp = experiments[i];
+//			var tmp={};
+//			tmp['id'] = exp.id;
+//			tmp['itemName'] = exp.description;
+//			tmp['comment'] = exp.comments;
+//			tmp['species_id'] = exp.species_id;
+//			out.push(tmp) 
+//		}
+//		return(out)
+//	}
+	
+	getConditions(experiments): void {
+		
 		var exp;
 		var i = 0;
-		experiments = experiments['experiments']
 		var len = experiments.length;
-		var out = [];
 		for (i; i<len; i++){
 			exp = experiments[i];
-			var tmp={};
-			tmp['id'] = exp.id;
-			tmp['itemName'] = exp.description;
-			tmp['comment'] = exp.comments;
-			tmp['species_id'] = exp.species_id;
-			out.push(tmp) 
+			this.conditionService.getConditions(exp.id)
+					.subscribe(conditions => {this.conditions.push = conditions['conditions']})
 		}
-		return(out)
-	}
-	
-	
-	getConditions(experiments): Condition[] {
-		return(CONDITIONS)
+		
+		
+		
+//		return(CONDITIONS)
 	}
 	
 	

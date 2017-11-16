@@ -15,7 +15,7 @@ const httpOptions = {
 
 export class GeneService {
 	
-	private experimentsUrl = "http://172.20.208.246:3134/rna_seq/api/v1.0/experiments"
+	private genesUrl = "http://172.20.209.22:3134/rna_seq/api/v1.0/genes"
 	
 	constructor(
 		private http: HttpClient,
@@ -23,7 +23,11 @@ export class GeneService {
 	getGenes(): Observable<Gene[]> {
 		return of(GENES);
 	}
-	getExperiments(): Observable<any> {
-		return this.http.get<any>(this.experimentsUrl)
+
+	getGenes2(): Observable<any> {
+		return this.http.get<any>(this.genesUrl)
+//			.pipe(
+//				catchError(this.handleError('getExperiment2', []))
+//		)
 	}
 }
