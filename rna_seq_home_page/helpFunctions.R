@@ -75,10 +75,141 @@ mim2gene <- function(val,species_id_input){
 
 
 getKEGGLink<-function(kegg){
-  kegg = sub("path", "pathway", kegg, fixed=T)
-  link <- paste0("http://www.genome.jp/dbget-bin/www_bget?", kegg)
+  kegg = sub("path:", "", kegg, fixed=T)
+  link <- paste0("http://www.genome.jp/kegg-bin/show_pathway?", kegg)
   return(link)
+}
+
+getStringSVG2 <- function(genes, network_flavor, addInteractor1, 
+                          addInteractor2,requried_score, species_id){
+  
+  string_api_url = "http://string-db.org/api"
+  format = "svg"
+  method = "network"
+  
+  my_genes = genes
   
   
+  if (species_id==1){
+    #human
+    species = "9606"
+  }else if(species_id==2){
+    #mouse
+    species = "10090"
+  }else if (species_id==3){
+    #rat
+    species="10116"
+  }
+  
+  
+  genes = paste(my_genes, collapse="%0D")
+  request = paste0(string_api_url, "/",
+                   format, "/",
+                   method, "?",
+                   "identifiers=", genes,
+                   "&", "species=", species,
+                   "&", "network_flavor=", network_flavor,
+                   "&", "required_score=", requried_score,
+                   "&", "add_color_nodes=", addInteractor1,
+                   "&", "add_white_nodes=", addInteractor2
+  )
+  
+  svg <- http_get(request)
+  svg <- svg$then(function(response) {
+    out = response$content
+    out <- rawToChar(out)
+    out
+  })
+  
+  return(svg)
   
 }
+
+getFunctionalEnrichment2<-function(genes, species_id){
+  
+  string_api_url = "http://string-db.org/api"
+  format = "json"
+  method = "enrichment"
+  
+  my_genes = genes
+  
+  if (species_id==1){
+    #human
+    species = "9606"
+  }else if(species_id==2){
+    #mouse
+    species = "10090"
+  }else if (species_id==3){
+    #rat
+    species="10116"
+  }
+  
+  genes = paste(my_genes, collapse="%0D")
+  request = paste0(string_api_url, "/",
+                   format, "/",
+                   method, "?",
+                   "identifiers=", genes,
+                   "&", "species=", species
+  )
+  
+  
+  enrichments <- http_get(request)
+  out <- enrichments$then(function(response) {
+    out = response$content
+    out <- as.data.frame(fromJSON(rawToChar(out), flatten=TRUE))
+    if (dim(out)[1]>1){
+      out = out[,c("term", "description", "number_of_genes",
+                   "inputGenes", "fdr", "category")]
+      colnames(out) = c("pathwayID", "pathway description",
+                        "count in gene set", "input genes", "false discovery rate", "category")
+    }
+    print(out)
+    out
+  })
+  
+  return(out)
+}
+
+getStrNetwork2 <- function(genes, score, species_id){
+  add_nodes = 0
+  string_api_url = "http://string-db.org/api"
+  format = "json"
+  method = "network"
+  
+  my_genes = genes
+  
+  if (species_id==1){
+    #human
+    species = "9606"
+  }else if(species_id==2){
+    #mouse
+    species = "10090"
+  }else if (species_id==3){
+    #rat
+    species="10116"
+  }
+  
+  genes = paste(my_genes, collapse="%0D")
+  request = paste0(string_api_url, "/",
+                   format, "/",
+                   method, "?",
+                   "identifiers=", genes,
+                   "&", "species=", species,
+                   "&", "required_score=", score,
+                   "&", "add_nodes=", add_nodes 
+                   
+  )
+  
+  
+  enrichments <- http_get(request)
+  out <- enrichments$then(function(response) {
+    out = response$content
+    out <- as.data.frame(fromJSON(rawToChar(out), flatten=TRUE))
+    print(out)
+    out
+  })
+  return(out)
+}
+
+
+

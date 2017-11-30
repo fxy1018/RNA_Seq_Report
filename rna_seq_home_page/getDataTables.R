@@ -25,10 +25,23 @@ getSampleTable <- function(expId, condition_table){
 
 ################
 getExpressionGeneTable <- function(condition_table, select_gene_condition, select_gene_gene,exp_id, ensembl_gene_table, method){
+  my_db2 <- dbPool(
+    RMySQL::MySQL(),
+    dbname = "rna_seq2",
+    host = host,
+    username=username,
+    password = password
+  )
+  
+  
   if (method=="TPM"){
+    #get TPM gene expression
+    gene_expression_tpm = data.frame(my_db2 %>% tbl("gene_expression_tpm"))
     gene_expression = gene_expression_tpm
   } 
   else if (method == "RPKM"){
+    #get gene expression
+    gene_expression_rpkm =data.frame(my_db2 %>% tbl("gene_expression_log_rpkm"))
     gene_expression = gene_expression_rpkm
   }
   
@@ -58,6 +71,8 @@ getExpressionGeneTable <- function(condition_table, select_gene_condition, selec
   colnames(gene_expression_table) = c('Gene', 'Expression','Condition', 'Sample')
   
   gene_expression_table = gene_expression_table[order(gene_expression_table$Expression, decreasing = T),]
+  
+  poolClose(my_db2)
   return(gene_expression_table)
 }
 
@@ -65,7 +80,15 @@ getExpressionGeneTable <- function(condition_table, select_gene_condition, selec
 getNCBIGeneExpression <- function(ncbi_project_id, select_gene_gene){
   select_gene_gene_id = gene_info %>% filter(symbol %in% select_gene_gene) %>% select('entrez', 'symbol')
   
+  my_db <- dbPool(
+    RMySQL::MySQL(),
+    dbname = "ncbi_gene_expression",
+    host = host,
+    username=username,
+    password = password
+  )
   
+  ncbi_expression_tissue = data.frame(my_db %>% tbl("expression_tissue"))
   ncbi_expression_tissue_table = ncbi_expression_tissue %>% 
                                  filter(project_id == ncbi_project_id) %>% 
                                  filter(gene %in% select_gene_gene_id$entrez) %>%
@@ -75,6 +98,7 @@ getNCBIGeneExpression <- function(ncbi_project_id, select_gene_gene){
   colnames(ncbi_expression_tissue_table) = c('id', 'description', 'entrez',
                                              'tissue_id', 'full_rpkm', 'exp_rpkm',
                                              'var', 'project_id', 'tissue', 'symbol')
+  poolClose(my_db)
   return(ncbi_expression_tissue_table)
 }
 
@@ -82,6 +106,17 @@ getNCBIGeneExpression <- function(ncbi_project_id, select_gene_gene){
 
 ################
 getDiffGeneTable <- function(expId, condition_table){
+  my_db2 <- dbPool(
+    RMySQL::MySQL(),
+    dbname = "rna_seq2",
+    host = host,
+    username=username,
+    password = password
+  )
+  
+  #get diff_gene_expression
+  diff_gene_expression = data.frame(my_db2 %>% tbl("diff_gene_expression"))
+
   
   #load diff gene expression
   diff_gene_table = diff_gene_expression %>%
@@ -99,6 +134,8 @@ getDiffGeneTable <- function(expId, condition_table){
   colnames(diff_gene_table) <- c("condition1_id", "condition2_id", "entrez",
                                  "gene_name", "description",  "condition1",
                                  "condition2", "logfc", "pvalue", "fdr")
+  
+  poolClose(my_db2)
   return(diff_gene_table)
   
 }
@@ -206,6 +243,18 @@ proteinFilter <- function(data, protein_type, species_id_input, uniprot_table){
 
 ################
 getKEGGTable <- function(expId, condition_table){
+  my_db2 <- dbPool(
+    RMySQL::MySQL(),
+    dbname = "rna_seq2",
+    host = host,
+    username=username,
+    password = password
+  )
+  
+  
+  #get kegg pathway analysis
+  kegg_pathway_analysis = data.frame(my_db2 %>% tbl('kegg_pathway_analysis'))
+  
   #load kegg results
   kegg_table = kegg_pathway_analysis %>% filter(experiment_id == expId)
   
@@ -219,6 +268,8 @@ getKEGGTable <- function(expId, condition_table){
   kegg_table = kegg_table[,c(3,2,1,5:12,14,15,16)]
   colnames(kegg_table) <- c("condition1_id", "condition2_id", "kegg_pathway_id", "description", "n", "up",
                             "down", "p_up", "fdr_up", "p_down",  "fdr_down", "condition1", "condition2", "kegg")
+  
+  poolClose(my_db2)
   return(kegg_table)
 }
 
@@ -257,6 +308,18 @@ filterKEGGTable <- function(kegg_table, condition_table, condition1, condition2,
 
 ##############
 getReactomeTable <- function(expId, condition_table){
+  my_db2 <- dbPool(
+    RMySQL::MySQL(),
+    dbname = "rna_seq2",
+    host = host,
+    username=username,
+    password = password
+  )
+  
+  
+  
+  #get reactome pathway analysis
+  reactome_pathway_analysis = data.frame(my_db2 %>% tbl('reactome_pathway_analysis'))
   
   #load kegg results
   reactome_table = reactome_pathway_analysis %>%
@@ -274,6 +337,7 @@ getReactomeTable <- function(expId, condition_table){
   colnames(reactome_table) <- c("condition1_id", "condition2_id", "reactome_id", "description", "gene_ratio", "bg_ratio",
                                 "pvalue", "padjust", "qvalue", "genes", "n", "condition1", "condition2", "reactome")
   
+  poolClose(my_db2)
   return(reactome_table)
 }
 

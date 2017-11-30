@@ -1,14 +1,15 @@
 library(pool)
 library(dplyr)
-
+require("httr")
+require("jsonlite")
+library(async)
+library(future)
+plan(multiprocess)
 #################connect to database#################
-# host = Sys.getenv(c("MYSQL"))
-# username = Sys.getenv(c("MYSQL_USER"))
-# password = Sys.getenv(c("MYSQL_PASSWORD"))
+host = Sys.getenv(c("MYSQL"))
+username = Sys.getenv(c("MYSQL_USER"))
+password = Sys.getenv(c("MYSQL_PASSWORD"))
 
-host = "127.0.0.1"
-username = "ironwood"
-password = "irtest"
 
 my_db2 <- dbPool(
   RMySQL::MySQL(),
@@ -40,16 +41,6 @@ ensembl = data.frame(my_db2 %>% tbl('ensembl'))
 #get homologue
 human_homolog = data.frame(my_db2 %>% tbl('human_homologue'))
 
-#get gene expression
-gene_expression_rpkm =data.frame(my_db2 %>% tbl("gene_expression_log_rpkm"))
-
-#get TPM gene expression
-gene_expression_tpm = data.frame(my_db2 %>% tbl("gene_expression_tpm"))
-
-
-#get diff_gene_expression
-diff_gene_expression = data.frame(my_db2 %>% tbl("diff_gene_expression"))
-
 #get gene_info
 gene_info = data.frame(my_db2 %>% tbl("gene_info") %>% select(c('entrez', 'symbol','ensembl', 'description','species_id')))
 
@@ -61,8 +52,6 @@ uniprot = data.frame(my_db2 %>% tbl("uniprot")%>%
 mim <- data.frame(my_db2 %>% tbl("gene_info") %>% 
                     select('entrez', 'mim', 'symbol', 'ensembl', 'species_id'))
 
-#get kegg pathway analysis
-kegg_pathway_analysis = data.frame(my_db2 %>% tbl('kegg_pathway_analysis'))
 
 #get kegg pathway
 kegg_pathways = data.frame(my_db2 %>% tbl('kegg_pathway'))
@@ -77,8 +66,6 @@ pathview = merge(pathview, kegg_pathways, by.x='kegg_id', by.y='id', all.x=T)
 #get genes from kegg pathways
 gene2KEGGTable = data.frame(my_db2 %>% tbl('kegg_pathway_gene')) %>% left_join(kegg_pathways, by = c("pathway_id" = 'id'))
 
-#get reactome pathway analysis
-reactome_pathway_analysis = data.frame(my_db2 %>% tbl('reactome_pathway_analysis'))
 
 #get reactome pathway
 reactome_pathways = data.frame(my_db2 %>% tbl('reactome_pathway'))
@@ -105,7 +92,6 @@ my_db <- dbPool(
 
 #get ncbi gene expression project
 ncbi_gene_exp_project = data.frame(my_db %>% tbl("project"))
-ncbi_expression_tissue = data.frame(my_db %>% tbl("expression_tissue"))
 ncbi_tissue = data.frame(my_db %>% tbl('tissue'))
 
 poolClose(my_db)

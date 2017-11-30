@@ -2,6 +2,9 @@ library(pool)
 library(dplyr)
 require("httr")
 require("jsonlite")
+library(async)
+library(future)
+plan(multiprocess)
 
 #################connect to database#################
 host = Sys.getenv(c("MYSQL"))
@@ -20,8 +23,5 @@ gene_table = data.frame(my_db2 %>% tbl('ensembl') %>% filter(species_id == 1) %>
 experiment_table = data.frame(my_db2 %>% tbl("experiment"))
 condition_table = data.frame(my_db2 %>% tbl("condition"))
 
-
-
-
 # 
-# poolClose(my_db2)
+poolClose(my_db2)

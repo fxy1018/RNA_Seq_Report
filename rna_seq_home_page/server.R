@@ -4,6 +4,9 @@ library(pool)
 library(dplyr)
 library(plotly)
 library(png)
+library(RCurl)
+library(XML)
+library(htmltools)
 source('view/report_overview_view.R')
 source('view/report_gene_view.R')
 source('view/report_pathway_view.R')
@@ -130,7 +133,6 @@ shinyServer(function(input, output, session) {
         barchart
       })
       
-      
       #render ncbi_expression_barchart
       output$ncbi_gene_expression_barchart <- renderPlotly({
         if (length(select_gene_gene) == 0){
@@ -160,8 +162,7 @@ shinyServer(function(input, output, session) {
         
       })
       
-      
-      
+      #render box plot
       output$gene_expression_boxplot<- renderPlotly({
         if (length(select_gene_gene) == 0){
           return(NULL)
@@ -173,9 +174,132 @@ shinyServer(function(input, output, session) {
         
       })
       
+      #render string database
+      #init the string database tab
+      input_genes = select_gene_gene
+      input_network_flavor = "actions"
+      input_addInteractor1 = 10
+      input_addInteractor2 = 0
+      input_requried_score = 400
       
+      svg =synchronise(getStringSVG2(input_genes, input_network_flavor,
+                                     input_addInteractor1, input_addInteractor2,
+                                     input_requried_score, species_id_input))
+      
+      output$svg <- renderUI({
+        tags$div(id="string_svg_sub",
+                 HTML(svg)
+        )
+        
+      })
+      
+      # Parse the file
+      doc <- htmlParse(svg)
+      
+      # Extract genes in the svg
+      p <- xpathSApply(doc, "//g/text", xmlValue)
+      genes = unique(p)
+      
+      #get string gene interaction
+      output$string_network_table <- renderDataTable({
+        nets = synchronise(getStrNetwork2(genes, input_requried_score, species_id_input))
+        nets = nets[,c("preferredName_A", "preferredName_B", "score")]
+        names(nets) = c("Node A", "Node B", "Score")
+        nets
+      }, options=list(order=list(list(2,'desc'))), rownames = FALSE, selection="none")
+      
+      
+      #get string functional enrichment results
+      fun_enrich = synchronise(getFunctionalEnrichment2(genes, species_id_input))
+      category = factor(fun_enrich$category)
+      std_cate_name = c("Biological Process (GO)", "Molecular Function (GO)", "Cellular Component (GO)",
+                        "KEGG Pathways", "PFAM Protein Domains", "INTERPRO Protein Domains and Features")
+      names(std_cate_name) <- c("Process", "Function", 'Component',"KEGG", "Pfam", "InterPro")
+      
+      #generate multiple datatables based on pathway categories
+      lapply(levels(category), function(c){
+        output[[paste0('string_func_', c)]] <- DT::renderDataTable({
+          fun_enrich[fun_enrich$category==c,]
+        }, options=list(order=list(list(4,'asc'))), rownames = FALSE, selection="none")
+      })
+      
+      #render data table for functional enrichment results
+      output$string_func_dts <- renderUI({
+        lapply(levels(category), function(c){
+          tags$div(
+            tags$br(),
+            tags$h4(std_cate_name[[c]], style="background: lightgrey; color:black;"),
+            DT::dataTableOutput(paste0('string_func_', c))
+          )
+        })
+      })
       
     })
+    
+    #response for string update
+    #update report according to button event update, or update string database
+    observeEvent(input$updateString, {
+      input_genes = input$gene_gene
+      input_network_flavor = input$network_flavor
+      input_addInteractor1 = input$addInteractor1
+      input_addInteractor2 = input$addInteractor2
+      input_requried_score = input$requried_score
+      
+      svg =synchronise(getStringSVG2(input_genes, input_network_flavor,
+                                     input_addInteractor1, input_addInteractor2,
+                                     input_requried_score, species_id_input))
+      
+      output$svg <- renderUI({
+        tags$div(id="string_svg_sub",
+                 HTML(svg)
+        )
+        
+      })
+      
+      # Parse the file
+      doc <- htmlParse(svg)
+      
+      # Extract genes in the svg
+      p <- xpathSApply(doc, "//g/text", xmlValue)
+      genes = unique(p)
+      
+      #get string gene interaction
+      output$string_network_table <- renderDataTable({
+        nets = synchronise(getStrNetwork2(genes, input_requried_score, species_id_input))
+        nets = nets[,c("preferredName_A", "preferredName_B", "score")]
+        names(nets) = c("Node A", "Node B", "Score")
+        nets
+      }, options=list(order=list(list(2,'desc'))), rownames = FALSE, selection="none")
+      
+      
+      #get string functional enrichment results
+      fun_enrich = synchronise(getFunctionalEnrichment2(genes, species_id_input))
+      category = factor(fun_enrich$category)
+      std_cate_name = c("Biological Process (GO)", "Molecular Function (GO)", "Cellular Component (GO)",
+                        "KEGG Pathways", "PFAM Protein Domains", "INTERPRO Protein Domains and Features")
+      names(std_cate_name) <- c("Process", "Function", 'Component',"KEGG", "Pfam", "InterPro")
+      
+      #generate multiple datatables based on pathway categories
+      lapply(levels(category), function(c){
+        output[[paste0('string_func_', c)]] <- DT::renderDataTable({
+          fun_enrich[fun_enrich$category==c,]
+        }, options=list(order=list(list(4,'asc'))), rownames = FALSE, selection="none")
+      })
+      
+      #render data table for functional enrichment results
+      output$string_func_dts <- renderUI({
+        lapply(levels(category), function(c){
+          tags$div(
+            tags$br(),
+            tags$h4(std_cate_name[[c]], style="background: lightgrey; color:black;"),
+            DT::dataTableOutput(paste0('string_func_', c))
+          )
+        })
+      })
+    })
+    
+    
+    
     
     
     #download gene expression table
@@ -197,6 +321,12 @@ shinyServer(function(input, output, session) {
         write.csv(data, file, quote = F, row.names = F)
       }
     )
+    
+    
+    
+    
+    
+    
     
     ############end of gene expression tab#############
     
@@ -343,7 +473,7 @@ shinyServer(function(input, output, session) {
       tags$a(
         imageOutput("pathview"),
         href=link,
-        target="_blank"
+	target='_blank'
       )
     })
     
