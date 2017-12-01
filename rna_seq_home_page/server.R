@@ -21,9 +21,7 @@ shinyServer(function(input, output, session) {
   #render experiment table  
   output$experiment_table <- DT::renderDataTable(
     {experiment_table2}, rownames=FALSE, selection='none')
-  
-  
-  
+
   observeEvent(input$view_report,{
     
     #get experiment id
@@ -81,9 +79,13 @@ shinyServer(function(input, output, session) {
     })
     
     observeEvent(input$gene_update,{
-
+      
+      
       select_gene_condition = input$gene_condition
       select_gene_gene = input$gene_gene
+      
+     
+      
       
       if ("All" %in% select_gene_condition) {
         select_gene_condition = condition_table$name
@@ -96,6 +98,10 @@ shinyServer(function(input, output, session) {
       #render gene expression table to tab
       output$gene_expression_table <- DT::renderDataTable(
         {
+          shiny::validate(
+            need(length(select_gene_gene) != 0, "Please select genes")
+          )
+          
           data = gene_expression_table
         },
         escape = FALSE, rownames = FALSE, selection='none'
@@ -103,9 +109,11 @@ shinyServer(function(input, output, session) {
       
       #render bar chart 
       output$gene_expression_barchart <- renderPlotly({
-        if (length(select_gene_gene) == 0){
-          return(NULL)
-        }
+        
+        shiny::validate(
+          need(length(select_gene_gene) != 0, "Please select genes")
+        )
+        
         plotdata = aggregate(gene_expression_table[, c("Expression")], 
                              list(gene_expression_table$Gene, gene_expression_table$Condition), 
                              mean)
@@ -127,7 +135,6 @@ shinyServer(function(input, output, session) {
                              type='bar', color = ~Condition, 
                              error_y = ~list(value = SD, color="black")) %>%
             layout(yaxis = list(title="AVG"), xaxis = list(title= ""))
-          
         }
         
         barchart
@@ -135,9 +142,9 @@ shinyServer(function(input, output, session) {
       
       #render ncbi_expression_barchart
       output$ncbi_gene_expression_barchart <- renderPlotly({
-        if (length(select_gene_gene) == 0){
-          return(NULL)
-        }
+        shiny::validate(
+          need(length(select_gene_gene) != 0, "Please select genes")
+        )
         
         if (input$gene_ncbi_project == "None") {
           return(NULL)
@@ -170,8 +177,6 @@ shinyServer(function(input, output, session) {
         x_layout <- list(title="")
         boxplot = plot_ly(gene_expression_table, x=~Gene, y = ~Expression, type="box",
                      color = ~Condition, boxpoints="all", pointpos=0) %>% layout(boxmode="group", xaxis=x_layout)
-        
-        
       })
       
       #render string database
@@ -186,12 +191,7 @@ shinyServer(function(input, output, session) {
                                      input_addInteractor1, input_addInteractor2,
                                      input_requried_score, species_id_input))
       
-      output$svg <- renderUI({
-        tags$div(id="string_svg_sub",
-                 HTML(svg)
-        )
-        
-      })
+      output$svg <- renderUI({tags$div(id="string_svg_sub", HTML(svg))})
       
       # Parse the file
       doc <- htmlParse(svg)
@@ -233,13 +233,12 @@ shinyServer(function(input, output, session) {
           )
         })
       })
-      
     })
     
     #response for string update
     #update report according to button event update, or update string database
     observeEvent(input$updateString, {
-      input_genes = input$gene_gene
+      input_genes = select_gene_gene
       input_network_flavor = input$network_flavor
       input_addInteractor1 = input$addInteractor1
       input_addInteractor2 = input$addInteractor2
@@ -249,12 +248,7 @@ shinyServer(function(input, output, session) {
                                      input_addInteractor1, input_addInteractor2,
                                      input_requried_score, species_id_input))
       
-      output$svg <- renderUI({
-        tags$div(id="string_svg_sub",
-                 HTML(svg)
-        )
-        
-      })
+      output$svg <- renderUI({tags$div(id="string_svg_sub",HTML(svg))})
       
       # Parse the file
       doc <- htmlParse(svg)
@@ -297,10 +291,6 @@ shinyServer(function(input, output, session) {
         })
       })
     })
-    
-    
-    
-    
     
     #download gene expression table
     output$downloadGeneExpressionTable <- downloadHandler(
@@ -321,12 +311,6 @@ shinyServer(function(input, output, session) {
         write.csv(data, file, quote = F, row.names = F)
       }
     )
-    
-    
-    
-    
-    
-    
     
     ############end of gene expression tab#############
     
@@ -374,8 +358,6 @@ shinyServer(function(input, output, session) {
   
     })
     
-    
-    
     #download diff gene table
     output$downloadDiffGeneTable <- downloadHandler(
       filename = function(){
@@ -390,8 +372,7 @@ shinyServer(function(input, output, session) {
         write.csv(data, file, quote = F, row.names = F)
       }
     )
-    
-    
+ 
     
     ######################end of gene page########################
     ######################pathway page############################
@@ -419,7 +400,7 @@ shinyServer(function(input, output, session) {
     
     output$pathview <- renderImage({
       row = input$kegg_table_rows_selected
-      validate(
+      shiny::validate(
         need(row[1]!=0,"Select a pathway to view the pathway")
       )
       data <- filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr, input$disease_pathway)
@@ -429,7 +410,7 @@ shinyServer(function(input, output, session) {
       condition2 = path$condition2
       src = getSRC(kegg, condition1, condition2, exp_id, pathview, condition_table)
       
-      validate(
+      shiny::validate(
         need(length(src)!=0,"This pathway have no pathview, please select another one")
       )
 
@@ -481,13 +462,12 @@ shinyServer(function(input, output, session) {
     output$mappedGene2KEGGTable <- renderDataTable({
       row = input$kegg_table_rows_selected
   
-      validate(
+      shiny::validate(
         need(row[1]!=0,"")
       )
       
       data <- filterKEGGTable(kegg_table_all, condition_table, input$keggcondition1, input$keggcondition2, input$kegg_fdr, input$disease_pathway)
 
-      
       path = data[row,]
     
       p_id = path$kegg
@@ -525,14 +505,13 @@ shinyServer(function(input, output, session) {
       },
       content = function(file){
         data = filterReactomeTable(reactome_table_all, condition_table, input$reactomecondition1, input$reactomecondition2, input$reactomeFDR)
-        
         write.csv(data,file, quote = F, row.names = F)
       }
     )
     
     output$reactomePage <- renderText({
       row = input$reactome_table_rows_selected
-      validate(
+      shiny::validate(
         need(row[1]!=0,"Selected a reactome pathway")
       )
       
@@ -547,7 +526,7 @@ shinyServer(function(input, output, session) {
     
     output$mappedGene2ReactomeTable <- renderDataTable({
       row = input$reactome_table_rows_selected
-      validate(
+      shiny::validate(
         need(row[1]!=0,"")
       )
       
@@ -563,17 +542,104 @@ shinyServer(function(input, output, session) {
       diff_genes = filterDiffGeneTable2(diff_gene_table_all, condition_table,
                                         condition1, condition2, 0.1, 
                                         "All",species_id_input, uniprot_table)
-      
-      
-      
-      
-    
+
       genedata <- merge(diff_genes, genedata, by.x = "gene_name", by.y = "gene" , all = FALSE)
       genedata <- genedata[, -dim(genedata)[2]]
       
       return(genedata)
     }, escape=F)
     
+    ##########Pahtway String tab start############
+    observeEvent(input$pathway_string_update,{
+      #get differential expression genes
+      stringcondition1 = input$stringcondition1
+      stringcondition2 = input$stringcondition2
+      string_protein_type = input$string_protein_type
+      string_fdr = input$string_gene_cutoff
+      
+      data = filterDiffGeneTable2(diff_gene_table_all, condition_table,
+                                  stringcondition1, stringcondition2,
+                                  string_fdr, string_protein_type,
+                                  species_id_input, uniprot_table)
+
+      data = data[order(data$fdr),]
+      if (dim(data)[1] > 100){
+        data = data[1:100,]
+      }
+      
+      output$input_gene_title <- renderUI({
+        tags$h3("Input Genes")  
+      })
+      
+      output$pathway_string_gene_table <- DT::renderDataTable(
+        {
+          data
+        },
+        escape = FALSE, rownames = FALSE, selection='none'
+      )
+
+      input_genes = data$gene_name
+      input_network_flavor = input$pathway_network_flavor
+      input_addInteractor1 = input$pathway_addInteractor1
+      input_addInteractor2 = input$pathway_addInteractor2
+      input_requried_score = input$pathway_requried_score
+      
+      svg =synchronise(getStringSVG2(input_genes, input_network_flavor,
+                                     input_addInteractor1, input_addInteractor2,
+                                     input_requried_score, species_id_input))
     
+      output$pathway_svg <- renderUI({
+       
+        tags$div(id="pathway_string_svg_sub",
+                 tags$hr(),
+                 tags$h3("STRING Results"),
+                 HTML(svg),
+                 tags$div(id="pathway_string_collapse_control",
+                          htmlTemplate("pathway_string_collapse_control.html"),
+                          tags$hr(),
+                          tags$br(),
+                          tags$h3("Functional Enrichment Results")))})
+      
+      
+      # Parse the file
+      doc <- htmlParse(svg)
+      
+      # Extract genes in the svg
+      p <- xpathSApply(doc, "//g/text", xmlValue)
+      genes = unique(p)
+      
+      output$pathway_string_network_table <- renderDataTable({
+        nets = synchronise(getStrNetwork2(genes, input_requried_score, species_id_input))
+        nets = nets[,c("preferredName_A", "preferredName_B", "score")]
+        names(nets) = c("Node A", "Node B", "Score")
+        nets
+      }, options=list(order=list(list(2,'desc'))), rownames = FALSE, selection="none")
+      
+      #get string functional enrichment results
+      fun_enrich = synchronise(getFunctionalEnrichment2(genes, species_id_input))
+      category = factor(fun_enrich$category)
+      std_cate_name = c("Biological Process (GO)", "Molecular Function (GO)", "Cellular Component (GO)",
+                        "KEGG Pathways", "PFAM Protein Domains", "INTERPRO Protein Domains and Features")
+      names(std_cate_name) <- c("Process", "Function", 'Component',"KEGG", "Pfam", "InterPro")
+      
+      #generate multiple datatables based on pathway categories
+      lapply(levels(category), function(c){
+        output[[paste0('string_func_', c)]] <- DT::renderDataTable({
+          fun_enrich[fun_enrich$category==c,]
+        }, options=list(order=list(list(4,'asc'))), rownames = FALSE, selection="none")
+      })
+      
+      #render data table for functional enrichment results
+      output$pathway_string_func_dts <- renderUI({
+        
+        lapply(levels(category), function(c){
+          tags$div(
+            tags$br(),
+            tags$h4(std_cate_name[[c]], style="background: lightgrey; color:black;"),
+            DT::dataTableOutput(paste0('string_func_', c))
+          )
+        })
+      })
+    })
   })
 })

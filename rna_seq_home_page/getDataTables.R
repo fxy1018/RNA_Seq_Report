@@ -147,7 +147,7 @@ filterDiffGeneTable <- function(diff_gene_table, condition_table, condition1, co
     c1_id = condition_table$id[condition_table$name == condition1]
     c2_id = condition_table$id[condition_table$name == condition2]
     validated =  as.numeric(c1_id) > as.numeric(c2_id)
-    validate(
+    shiny::validate(
       need(validated,"No results, choose opposite comparison")
     )
     
@@ -158,9 +158,9 @@ filterDiffGeneTable <- function(diff_gene_table, condition_table, condition1, co
   data <- data[data$fdr < fdr, c(-1,-2)]
   
   #format the data
-  data$fdr <- format(as.numeric(data$fdr), scientific = T, digits=4)
-  data$pvalue <- format(as.numeric(data$pvalue), scientific = T, digits=4)
-  data$logfc <- round(as.numeric(data$logfc), 3)
+  # data$fdr <- format(as.numeric(data$fdr), scientific = T, digits=4)
+  # data$pvalue <- format(as.numeric(data$pvalue), scientific = T, digits=4)
+  # data$logfc <- round(as.numeric(data$logfc), 3)
   # data$logcpm <- round(as.numeric(data$logcpm), 3)
   # data$lr <- round(as.numeric(data$lr), 3)
   return(data)
@@ -173,7 +173,7 @@ filterDiffGeneTable2 <- function(diff_gene_table, condition_table, condition1, c
     c1_id = condition_table$id[condition_table$name == condition1]
     c2_id = condition_table$id[condition_table$name == condition2]
     validated =  as.numeric(c1_id) > as.numeric(c2_id)
-    validate(
+    shiny::validate(
       need(validated,"No results, choose opposite comparison")
     )
     
@@ -184,9 +184,9 @@ filterDiffGeneTable2 <- function(diff_gene_table, condition_table, condition1, c
   data <- data[data$fdr < fdr, c(-1,-2)]
   
   #format the data
-  data$fdr <- format(as.numeric(data$fdr), scientific = T, digits=4)
-  data$pvalue <- format(as.numeric(data$pvalue), scientific = T, digits=4)
-  data$logfc <- round(as.numeric(data$logfc), 3)
+  # data$fdr <- format(as.numeric(data$fdr), scientific = T, digits=4)
+  # data$pvalue <- format(as.numeric(data$pvalue), scientific = T, digits=4)
+  # data$logfc <- round(as.numeric(data$logfc), 3)
   # data$logcpm <- round(as.numeric(data$logcpm), 3)
   # data$lr <- round(as.numeric(data$lr), 3)
   
@@ -285,7 +285,7 @@ filterKEGGTable <- function(kegg_table, condition_table, condition1, condition2,
     c1_id = condition_table$id[condition_table$name == condition1]
     c2_id = condition_table$id[condition_table$name == condition2]
     validated =  as.numeric(c1_id) > as.numeric(c2_id)
-    validate(
+    shiny::validate(
       need(validated,"No results, choose opposite comparison")
     )
     
@@ -348,7 +348,7 @@ filterReactomeTable <- function(reactome_table, condition_table, condition1, con
     c1_id = condition_table$id[condition_table$name == condition1]
     c2_id = condition_table$id[condition_table$name == condition2]
     validated =  as.numeric(c1_id) > as.numeric(c2_id)
-    validate(
+    shiny::validate(
       need(validated,"No results, choose opposite comparison")
     )
     

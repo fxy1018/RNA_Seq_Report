@@ -1,0 +1,203 @@
+<div class="row">
+<!--
+	<div class="col col-sm-4">
+		<button type="button" data-toggle="collapse" data-target="#pathway_string_svg" aria-expanded="true" aria-controls="pathway_string_svg">
+		Show Interaction Scores<i class="fa fa-angle-double-down" aria-hidden="true"></i></button>
+	</div>
+-->
+	
+	<div class="col col-sm-4">
+		<button type="button" data-toggle="collapse" data-target="#pathway_network_table" aria-expanded="false" aria-controls="pathway_network_table">
+		Show Interaction Scores<i class="fa fa-angle-double-down" aria-hidden="true"></i></button>
+	</div>
+	
+	<div class="col col-sm-4">
+		<button type="button" data-toggle="collapse" data-target="#pathway_legend" aria-expanded="false" aria-controls="pathway_legend">
+			Show Legend<i class="fa fa-angle-double-down" aria-hidden="true"></i></button>
+	</div>
+
+</div>
+
+<div class="collapse" id="pathway_legend">
+	<div>
+		<h4>Nodes:</h4>
+		<div class="row">
+			<div class="col col-sm-4">
+				<h5>Network nodes represent proteins</h5>
+				<p>splice isoforms or post-translational modifications are collapsed, i.e. each node represents all the proteins produced by a single, protein-coding gene locus.</p>
+			</div>
+			<div class="col col-sm-4">
+				<h5>Node Color</h5>
+				<div class="row">
+					<div class="col col-sm-2">
+						<img src='/images/color_node.PNG' style='vertical-align:bottom;'>
+					</div>
+					<div class="col col-sm-10">
+						<p>colored nodes:<br />query proteins and first shell of interactors</p>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col col-sm-2">
+						<img src='/images/white_node.PNG' style='vertical-align:bottom'>
+					</div>
+					<div class="col col-sm-10">
+						<p>white nodes:<br />second shell of interactors</p>
+					</div>
+				</div>
+			</div>
+			<div class="col col-sm-4">
+				<h5>Node Content</h5>	
+				<div class="row">
+					<div class="col col-sm-2">
+						<img src='/images/empty_node.PNG' style='vertical-align:bottom'>
+					</div>
+					<div class="col col-sm-10">
+						<p>empty nodes:<br />proteins of unknown 3D structure</p>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col col-sm-2">
+						<img src='/images/fill_node.PNG' style='vertical-align:bottom'>
+					</div>
+					<div class="col col-sm-10">
+						<p>filled nodes:<br />some 3D structure is known or predicted</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="legend_edge">
+		<h4>Edges:</h4>
+		<div class="row">
+			<div class="col col-sm-3">
+				<h5>Edges represent protein-protein associations</h5>
+				<p>associations are meant to be specific and meaningful, i.e. proteins jointly contribute to a shared function; this does not necessarily mean they are physically binding each other.</p>
+			</div>
+			<div class="col col-sm-6">
+				<h5>Node Color</h5>
+				<div class="row">
+					<div class="col col-sm-6">
+						<div class="row">
+							<div class="col col-sm-2">
+								<img src='/images/action_activation.png' style='vertical-align:bottom' alt='activation edge'/>
+							</div>
+							<div class="col col-sm-10">
+								<p>activation&nbsp;&nbsp;</p>
+							</div>
+						</div>
+
+						<div class="row">
+							<div class="col col-sm-2">
+								<img src='/images/action_activation.png' style='vertical-align:bottom' alt='activation edge'/>
+							</div>
+							<div class="col col-sm-10">
+								<p>activation&nbsp;&nbsp;</p>
+							</div>
+						</div>
+
+						<div class="row">
+							<div class="col col-sm-2">
+								<img src='/images/action_inhibition.png' style='vertical-align:bottom' alt='inhibition edge' />
+							</div>
+							<div class="col col-sm-10">
+								<p>inhibition</p>
+							</div>
+						</div>
+
+						<div class="row">
+							<div class="col col-sm-2">
+								<img src='/images/action_binding.png' style='vertical-align:bottom' alt='experiment edge' />
+							</div>
+							<div class="col col-sm-10">
+								<p>binding</p>
+							</div>
+						</div>
+
+						<div class="row">
+							<div class="col col-sm-2">
+								<img src='/images/action_catalysis.png' style='vertical-align:bottom' alt='experiment edge' />
+							</div>
+							<div class="col col-sm-10">
+								<p>catalysis</p>
+							</div>
+						</div>
+
+					</div>	
+					<div class="col col-sm-6">
+						<div class="row">
+							<div class="col col-sm-2">
+								<img src='/images/action_phenotype.png' style='vertical-align:bottom' alt='phenotype edge' />
+							</div>
+							<div class="col col-sm-10">
+								<p>phenotype</p>
+							</div>
+						</div>
+
+						<div class="row">
+							<div class="col col-sm-2">
+								<img src='/images/action_ptmod.png' style='vertical-align:bottom' alt='ptmod edge' />
+							</div>
+							<div class="col col-sm-10">
+								<p>posttranslational modification&nbsp;&nbsp;</p>
+							</div>
+						</div>
+
+						<div class="row">
+							<div class="col col-sm-2">
+								<img src='/images/action_reaction.png' style='vertical-align:bottom' alt='experiment edge' />
+							</div>
+							<div class="col col-sm-10">
+								<p>reaction</p>
+							</div>
+						</div>
+
+						<div class="row">
+							<div class="col col-sm-2">
+								<img src='/images/action_expression.png' style='vertical-align:bottom' alt='experiment edge' />
+							</div>
+							<div class="col col-sm-10">
+								<p>transcriptional regulation</p>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+			<div class="col col-sm-3">
+				<h5>Action effects</h5>
+					<div class="row">
+						<div class="col col-sm-2">
+							<img src='/images/active.png' style='vertical-align:bottom' alt='active edge' />
+						</div>
+						<div class="col col-sm-10">
+							<p>positive</p>
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col col-sm-2">
+							<img src='/images/negative.png' style='vertical-align:bottom' alt='negative edge' />
+						</div>
+						<div class="col col-sm-10">
+							<p>negative</p>
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col col-sm-2">
+							<img src='/images/unspecified.PNG' style='vertical-align:bottom' alt='unspecified edge' />
+						</div>
+						<div class="col col-sm-10">
+							<p>unspecified</p>
+						</div>
+					</div>
+
+			</div>
+		</div>
+	</div>
+</div>
+
+
+

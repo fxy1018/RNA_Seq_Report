@@ -10,7 +10,6 @@ host = Sys.getenv(c("MYSQL"))
 username = Sys.getenv(c("MYSQL_USER"))
 password = Sys.getenv(c("MYSQL_PASSWORD"))
 
-
 my_db2 <- dbPool(
   RMySQL::MySQL(),
   dbname = "rna_seq2",
